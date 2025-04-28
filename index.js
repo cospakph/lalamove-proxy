@@ -1,35 +1,26 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
 
+// Proxy route
 app.post('/proxy', async (req, res) => {
-  const { method, url, headers, data } = req.body;
-
   try {
-    const response = await axios({
-      method,
-      url,
-      headers,
-      data,
+    const { headers, body } = req.body;
+
+    const response = await axios.post('https://rest.ph.lalamove.com/v3/orders', body, {
+      headers: headers,
     });
 
-    res.status(response.status).json(response.data);
+    res.status(response.status).send(response.data);
   } catch (error) {
-    if (error.response) {
-      res.status(error.response.status).json(error.response.data);
-    } else {
-      res.status(500).json({ message: 'Proxy error', error: error.message });
-    }
+    console.error(error.response?.data || error.message);
+    res.status(error.response?.status || 500).send(error.response?.data || { error: error.message });
   }
 });
 
-// Just a GET endpoint so you can test if Render is alive
-app.get('/', (req, res) => {
-  res.send('Proxy Server is running.');
-});
-
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Proxy server listening on port ${PORT}`);
+  console.log(`Proxy server running on port ${PORT}`);
 });
